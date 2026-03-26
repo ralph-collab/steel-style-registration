@@ -938,66 +938,93 @@
       waiverAgree.value = waiverCheckbox.checked ? "Yes" : "No";
     });
 
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
+    form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-      statusMessage.style.display = "none";
-      statusMessage.textContent = "";
+  statusMessage.style.display = "none";
+  statusMessage.textContent = "";
+  waiverAgree.value = waiverCheckbox.checked ? "Yes" : "No";
+  updateTotals();
 
-      waiverAgree.value = waiverCheckbox.checked ? "Yes" : "No";
-      updateTotals();
+  if (!form.checkValidity()) {
+    const firstInvalid = form.querySelector(":invalid");
 
-      if (!form.checkValidity()) {
-        statusMessage.textContent = "Please complete all required fields before continuing.";
-        statusMessage.style.display = "block";
-        return;
+    let fieldName = "a required field";
+
+    if (firstInvalid) {
+      if (firstInvalid.id === "firstName") fieldName = "First Name";
+      else if (firstInvalid.id === "lastName") fieldName = "Last Name";
+      else if (firstInvalid.id === "address") fieldName = "Address";
+      else if (firstInvalid.id === "city") fieldName = "City";
+      else if (firstInvalid.id === "state") fieldName = "State";
+      else if (firstInvalid.id === "zip") fieldName = "Zip";
+      else if (firstInvalid.id === "email") fieldName = "Email";
+      else if (firstInvalid.id === "signature") fieldName = "Signature";
+      else if (firstInvalid.id === "dateSigned") fieldName = "Date Signed";
+      else if (firstInvalid.id === "waiverAgreeCheckbox") fieldName = "Liability Waiver Agreement";
+      else if (firstInvalid.name && firstInvalid.name.match(/^vehicle\d+(Year|Make|Model|Color)$/)) {
+        const match = firstInvalid.name.match(/^vehicle(\d+)(Year|Make|Model|Color)$/);
+        if (match) {
+          fieldName = `Vehicle ${match[1]} ${match[2]}`;
+        }
       }
+    }
 
-      payButton.disabled = true;
-      addVehicleBtn.disabled = true;
-      document.querySelectorAll(".remove-vehicle").forEach(btn => btn.disabled = true);
-      payButton.textContent = "Saving Registration...";
+    statusMessage.textContent = `Please complete: ${fieldName}.`;
+    statusMessage.style.display = "block";
 
-      try {
-        const formData = new FormData(form);
-        formData.set("vehicleCount", String(vehicleCount));
+    if (firstInvalid) {
+      firstInvalid.focus();
+    }
 
-        const response = await fetch(form.action, {
-          method: "POST",
-          body: formData
-        });
+    return;
+  }
 
-        const rawText = await response.text();
-        console.log("Raw server response:", rawText);
+  payButton.disabled = true;
+  addVehicleBtn.disabled = true;
+  document.querySelectorAll(".remove-vehicle").forEach(btn => btn.disabled = true);
+  payButton.textContent = "Saving Registration...";
 
-        let result;
-        try {
-          result = JSON.parse(rawText);
-        } catch (parseError) {
-          throw new Error("Server did not return valid JSON: " + rawText);
-        }
+  try {
+    const formData = new FormData(form);
+    formData.set("vehicleCount", String(vehicleCount));
 
-        if (!result.success) {
-          throw new Error(result.error || result.message || "Registration could not be saved.");
-        }
-
-        if (!result.paymentLink) {
-          throw new Error("Registration was saved, but no Square payment link was returned.");
-        }
-
-        payButton.textContent = "Redirecting to Square...";
-        window.location.href = result.paymentLink;
-
-      } catch (err) {
-        statusMessage.textContent = err.message || "Something went wrong while saving your registration.";
-        statusMessage.style.display = "block";
-
-        payButton.disabled = false;
-        addVehicleBtn.disabled = vehicleCount >= MAX_VEHICLES;
-        document.querySelectorAll(".remove-vehicle").forEach(btn => btn.disabled = false);
-        updateTotals();
-      }
+    const response = await fetch(form.action, {
+      method: "POST",
+      body: formData
     });
+
+    const rawText = await response.text();
+    console.log("Raw server response:", rawText);
+
+    let result;
+    try {
+      result = JSON.parse(rawText);
+    } catch (parseError) {
+      throw new Error("Server did not return valid JSON: " + rawText);
+    }
+
+    if (!result.success) {
+      throw new Error(result.error || result.message || "Registration could not be saved.");
+    }
+
+    if (!result.paymentLink) {
+      throw new Error("Registration was saved, but no Square payment link was returned.");
+    }
+
+    payButton.textContent = "Redirecting to Square...";
+    window.location.href = result.paymentLink;
+
+  } catch (err) {
+    statusMessage.textContent = err.message || "Something went wrong while saving your registration.";
+    statusMessage.style.display = "block";
+
+    payButton.disabled = false;
+    addVehicleBtn.disabled = vehicleCount >= MAX_VEHICLES;
+    document.querySelectorAll(".remove-vehicle").forEach(btn => btn.disabled = false);
+    updateTotals();
+  }
+});
 
     if (dateSignedField && !dateSignedField.value) {
       const today = new Date();
