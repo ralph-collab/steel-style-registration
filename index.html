@@ -647,7 +647,16 @@
 
             <div class="inline-field">
               <label class="inline-label-side" for="zip">Zip <span class="required">*</span></label>
-              <input class="line-input" id="zip" name="zip" maxlength="10" required />
+              <input
+                class="line-input"
+                id="zip"
+                name="zip"
+                inputmode="numeric"
+                pattern="^\d{5}(-\d{4})?$"
+                maxlength="10"
+                placeholder="12345 or 12345-6789"
+                required
+              />
             </div>
           </div>
 
@@ -957,7 +966,10 @@
       else if (firstInvalid.id === "address") fieldName = "Address";
       else if (firstInvalid.id === "city") fieldName = "City";
       else if (firstInvalid.id === "state") fieldName = "State";
-      else if (firstInvalid.id === "zip") fieldName = "Zip";
+      else if (firstInvalid.id === "zip") {
+        if (firstInvalid.value.trim() === "") fieldName = "Zip";
+        else fieldName = "a valid Zip Code (5 digits or ZIP+4)";
+      }
       else if (firstInvalid.id === "email") fieldName = "Email";
       else if (firstInvalid.id === "signature") fieldName = "Signature";
       else if (firstInvalid.id === "dateSigned") fieldName = "Date Signed";
