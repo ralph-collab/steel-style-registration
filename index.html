@@ -841,7 +841,15 @@
         <div class="vehicle-row">
           <div>
             <label class="inline-label">Year <span class="required">*</span></label>
-            <input class="line-input" name="vehicle${index}Year" required />
+            <input
+              class="line-input"
+              name="vehicle${index}Year"
+              inputmode="numeric"
+              pattern="^\d{4}$"
+              maxlength="4"
+              placeholder="YYYY"
+              required
+            />
           </div>
           <div>
             <label class="inline-label">Make <span class="required">*</span></label>
@@ -977,7 +985,15 @@
       else if (firstInvalid.name && firstInvalid.name.match(/^vehicle\d+(Year|Make|Model|Color)$/)) {
         const match = firstInvalid.name.match(/^vehicle(\d+)(Year|Make|Model|Color)$/);
         if (match) {
-          fieldName = `Vehicle ${match[1]} ${match[2]}`;
+          if (match[2] === "Year") {
+  if (firstInvalid.value.trim() === "") {
+    fieldName = `Vehicle ${match[1]} Year`;
+  } else {
+    fieldName = `a valid 4-digit year for Vehicle ${match[1]}`;
+  }
+} else {
+  fieldName = `Vehicle ${match[1]} ${match[2]}`;
+}
         }
       }
     }
