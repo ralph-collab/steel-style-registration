@@ -20,12 +20,12 @@
     html { scroll-behavior: smooth; }
 
     body {
-      margin: 0;
-      padding: 24px;
-      background: linear-gradient(180deg, #e3e3e3 0%, #f1f1f1 100%);
-      font-family: Arial, Helvetica, sans-serif;
-      color: var(--text);
-    }
+  margin: 0;
+  padding: 24px;
+  background: var(--paper);
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+}
 
     .page {
       max-width: 980px;
@@ -69,12 +69,13 @@
     }
 
     .main-title {
-      text-align: center;
-      font-size: clamp(34px, 4vw, 54px);
-      letter-spacing: 1px;
-      font-weight: 800;
-      margin: 0 0 12px;
-    }
+  text-align: center;
+  font-size: clamp(34px, 4vw, 54px);
+  letter-spacing: 1px;
+  font-weight: 800;
+  margin: 0 0 12px;
+  color: var(--accent-dark);
+}
 
     .required-note {
       text-align: center;
@@ -100,9 +101,10 @@
     }
 
     .section-rule {
-      border-bottom: 3px solid #454545;
-      margin-bottom: 18px;
-    }
+  border-bottom: 3px solid var(--line);
+  margin-bottom: 18px;
+  opacity: 0.9;
+}
 
     .row {
       display: grid;
@@ -167,9 +169,10 @@
     }
 
     .line-input:focus {
-      border-bottom-color: var(--accent-dark);
-      background: rgba(185, 137, 33, 0.06);
-    }
+  border-bottom-color: var(--accent);
+  background: rgba(185, 137, 33, 0.08);
+  outline: none;
+}
 
     .inline-field .line-input {
       flex: 1;
