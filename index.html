@@ -861,9 +861,10 @@
             <label class="inline-label">Year <span class="required">*</span></label>
             <input
               class="line-input"
+              type="text"
               name="vehicle${index}Year"
               inputmode="numeric"
-              pattern="^\d{4}$"
+              pattern="[0-9]{4}"
               maxlength="4"
               placeholder="YYYY"
               required
