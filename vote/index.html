@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Steel & Style Voting</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background: #0b1a2b;
+      color: white;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .card {
+      background: #142c47;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      background: #1d3e63;
+    }
+
+    .selected {
+      border: 2px solid gold;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      background: gold;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Vote - Best of Show</h1>
+
+<div id="status">Loading...</div>
+
+<div id="vehicles"></div>
+
+<button id="submitBtn" class="hidden">Submit Vote</button>
+
+<script>
+const API_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+const params = new URLSearchParams(window.location.search);
+const token = params.get("t");
+
+let selectedVehicle = null;
+
+async function validateTicket() {
+  const res = await fetch(`${API_URL}?action=validate&token=${token}`);
+  const data = await res.json();
+
+  if (!data.success) {
+    document.getElementById("status").innerText = "Invalid or used ticket.";
+    return false;
+  }
+
+  return true;
+}
+
+async function loadVehicles() {
+  const res = await fetch(`${API_URL}?action=vehicles`);
+  const data = await res.json();
+
+  const container = document.getElementById("vehicles");
+  container.innerHTML = "";
+
+  data.vehicles.forEach(v => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerText = v.display;
+
+    div.onclick = () => {
+      document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
+      div.classList.add("selected");
+      selectedVehicle = v.vehicleId;
+      document.getElementById("submitBtn").classList.remove("hidden");
+    };
+
+    container.appendChild(div);
+  });
+}
+
+async function submitVote() {
+  if (!selectedVehicle) return;
+
+  const res = await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      token: token,
+      vehicleId: selectedVehicle,
+      category: "Best of Show",
+      source: "web"
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    document.body.innerHTML = "<h1>✅ Vote Submitted</h1>";
+  } else {
+    document.body.innerHTML = "<h1>❌ Error submitting vote</h1>";
+  }
+}
+
+async function init() {
+  if (!token) {
+    document.getElementById("status").innerText = "Missing ticket.";
+    return;
+  }
+
+  const valid = await validateTicket();
+  if (!valid) return;
+
+  document.getElementById("status").innerText = "";
+  await loadVehicles();
+}
+
+document.getElementById("submitBtn").onclick = submitVote;
+
+init();
+</script>
+
+</body>
+</html>
