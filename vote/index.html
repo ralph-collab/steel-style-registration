@@ -103,14 +103,18 @@ async function submitVote() {
   if (!selectedVehicle) return;
 
   const res = await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      token: token,
-      vehicleId: selectedVehicle,
-      category: "Best of Show",
-      source: "web"
-    })
-  });
+  method: "POST",
+  headers: {
+    "Content-Type": "text/plain;charset=utf-8"
+  },
+  body: JSON.stringify({
+    action: "vote",
+    token: token,
+    vehicleId: selectedVehicle,
+    category: "Best of Show",
+    source: "web"
+  })
+});
 
   const data = await res.json();
 
