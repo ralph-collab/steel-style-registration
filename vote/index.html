@@ -5,14 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       padding: 20px;
       background: #0b1a2b;
       color: white;
+      margin: 0;
+    }
+
+    .wrapper {
+      max-width: 900px;
+      margin: 0 auto;
     }
 
     h1 {
       text-align: center;
+      margin-bottom: 20px;
+    }
+
+    #status {
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    #searchBox {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #35506d;
+      background: #142c47;
+      color: white;
+      box-sizing: border-box;
+    }
+
+    #searchBox::placeholder {
+      color: #b7c7d9;
     }
 
     .card {
@@ -21,6 +49,7 @@
       margin-bottom: 10px;
       border-radius: 8px;
       cursor: pointer;
+      transition: background 0.2s ease, border 0.2s ease;
     }
 
     .card:hover {
@@ -36,112 +65,179 @@
       padding: 15px;
       font-size: 18px;
       background: gold;
+      color: black;
       border: none;
       margin-top: 20px;
       cursor: pointer;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+
+    button:hover {
+      opacity: 0.95;
     }
 
     .hidden {
       display: none;
     }
+
+    .empty-message {
+      background: #142c47;
+      padding: 15px;
+      border-radius: 8px;
+      color: #b7c7d9;
+    }
   </style>
 </head>
 <body>
+  <div class="wrapper">
+    <h1>Vote - Best of Show</h1>
 
-<h1>Vote - Best of Show</h1>
+    <div id="status">Loading...</div>
 
-<div id="status">Loading...</div>
+    <input 
+      type="text" 
+      id="searchBox" 
+      placeholder="Search by name, make, model, or year..." 
+    >
 
-<div id="vehicles"></div>
+    <div id="vehicles"></div>
 
-<button id="submitBtn" class="hidden">Submit Vote</button>
+    <button id="submitBtn" class="hidden">Submit Vote</button>
+  </div>
 
-<script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxmiWtDh7aiStYDBqHuHI5zW3COr4tSlTR7mOF2r33IAf8RJID5NaHzhkvPJopbqehlXw/exec";
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxmiWtDh7aiStYDBqHuHI5zW3COr4tSlTR7mOF2r33IAf8RJID5NaHzhkvPJopbqehlXw/exec";
 
-const params = new URLSearchParams(window.location.search);
-const token = params.get("t");
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("t");
 
-let selectedVehicle = null;
+    let selectedVehicle = null;
+    let allVehicles = [];
 
-async function validateTicket() {
-  const res = await fetch(`${API_URL}?action=validate&token=${token}`);
-  const data = await res.json();
+    async function validateTicket() {
+      const res = await fetch(`${API_URL}?action=validate&token=${encodeURIComponent(token)}`);
+      const data = await res.json();
 
-  if (!data.success) {
-    document.getElementById("status").innerText = "Invalid or used ticket.";
-    return false;
-  }
+      if (!data.success) {
+        document.getElementById("status").innerText = "Invalid or used ticket.";
+        document.getElementById("searchBox").classList.add("hidden");
+        return false;
+      }
 
-  return true;
-}
+      return true;
+    }
 
-async function loadVehicles() {
-  const res = await fetch(`${API_URL}?action=vehicles`);
-  const data = await res.json();
+    function renderVehicles() {
+      const container = document.getElementById("vehicles");
+      const search = document.getElementById("searchBox").value.toLowerCase().trim();
 
-  const container = document.getElementById("vehicles");
-  container.innerHTML = "";
+      container.innerHTML = "";
 
-  data.vehicles.forEach(v => {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerText = v.display;
+      const filteredVehicles = allVehicles.filter(v =>
+        v.display.toLowerCase().includes(search)
+      );
 
-    div.onclick = () => {
-      document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
-      div.classList.add("selected");
-      selectedVehicle = v.vehicleId;
-      document.getElementById("submitBtn").classList.remove("hidden");
-    };
+      if (filteredVehicles.length === 0) {
+        container.innerHTML = `<div class="empty-message">No vehicles matched your search.</div>`;
+        return;
+      }
 
-    container.appendChild(div);
-  });
-}
+      filteredVehicles.forEach(v => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerText = v.display;
 
-async function submitVote() {
-  if (!selectedVehicle) return;
+        if (selectedVehicle === v.vehicleId) {
+          div.classList.add("selected");
+        }
 
-  const res = await fetch(API_URL, {
-  method: "POST",
-  headers: {
-    "Content-Type": "text/plain;charset=utf-8"
-  },
-  body: JSON.stringify({
-    action: "vote",
-    token: token,
-    vehicleId: selectedVehicle,
-    category: "Best of Show",
-    source: "web"
-  })
-});
+        div.onclick = () => {
+          document.querySelectorAll(".card").forEach(c => c.classList.remove("selected"));
+          div.classList.add("selected");
+          selectedVehicle = v.vehicleId;
+          document.getElementById("submitBtn").classList.remove("hidden");
+        };
 
-  const data = await res.json();
+        container.appendChild(div);
+      });
+    }
 
-  if (data.success) {
-    document.body.innerHTML = "<h1>✅ Vote Submitted</h1>";
-  } else {
-    document.body.innerHTML = "<h1>❌ Error submitting vote</h1>";
-  }
-}
+    async function loadVehicles() {
+      const res = await fetch(`${API_URL}?action=vehicles`);
+      const data = await res.json();
 
-async function init() {
-  if (!token) {
-    document.getElementById("status").innerText = "Missing ticket.";
-    return;
-  }
+      allVehicles = data.vehicles || [];
+      renderVehicles();
+    }
 
-  const valid = await validateTicket();
-  if (!valid) return;
+    async function submitVote() {
+      if (!selectedVehicle) return;
 
-  document.getElementById("status").innerText = "";
-  await loadVehicles();
-}
+      const submitBtn = document.getElementById("submitBtn");
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Submitting...";
 
-document.getElementById("submitBtn").onclick = submitVote;
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify({
+            action: "vote",
+            token: token,
+            vehicleId: selectedVehicle,
+            category: "Best of Show",
+            source: "web"
+          })
+        });
 
-init();
-</script>
+        const data = await res.json();
 
+        if (data.success) {
+          document.body.innerHTML = `
+            <div style="max-width: 900px; margin: 40px auto; text-align: center; color: white; font-family: Arial, sans-serif;">
+              <h1>✅ Vote Submitted</h1>
+              <p>Thank you for voting.</p>
+            </div>
+          `;
+        } else {
+          document.body.innerHTML = `
+            <div style="max-width: 900px; margin: 40px auto; text-align: center; color: white; font-family: Arial, sans-serif;">
+              <h1>❌ Error submitting vote</h1>
+              <p>Please try again or see event staff.</p>
+            </div>
+          `;
+        }
+      } catch (error) {
+        document.body.innerHTML = `
+          <div style="max-width: 900px; margin: 40px auto; text-align: center; color: white; font-family: Arial, sans-serif;">
+            <h1>❌ Error submitting vote</h1>
+            <p>Please try again or see event staff.</p>
+          </div>
+        `;
+      }
+    }
+
+    async function init() {
+      if (!token) {
+        document.getElementById("status").innerText = "Missing ticket.";
+        document.getElementById("searchBox").classList.add("hidden");
+        return;
+      }
+
+      const valid = await validateTicket();
+      if (!valid) return;
+
+      document.getElementById("status").innerText = "";
+      await loadVehicles();
+    }
+
+    document.getElementById("submitBtn").onclick = submitVote;
+    document.getElementById("searchBox").addEventListener("input", renderVehicles);
+
+    init();
+  </script>
 </body>
 </html>
