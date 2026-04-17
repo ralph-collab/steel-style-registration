@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Steel & Style Quick Registration</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f3e8;
+      color: #222;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.8rem;
+    }
+
+    .note {
+      margin-bottom: 20px;
+      color: #555;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    input, select {
+      border: 1px solid #bbb;
+    }
+
+    button {
+      border: none;
+      background: #8b0000;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      opacity: 0.95;
+    }
+
+    .status {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .status.success {
+      background: #e8f7e8;
+      color: #155724;
+      display: block;
+    }
+
+    .status.error {
+      background: #fdeaea;
+      color: #842029;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Steel & Style Quick Registration</h1>
+    <p class="note">Fast event-day registration for gate or kickoff party use.</p>
+
+    <form id="quickRegForm" class="grid">
+      <div>
+        <label for="firstName">First Name *</label>
+        <input type="text" id="firstName" name="firstName" required>
+      </div>
+
+      <div>
+        <label for="lastName">Last Name *</label>
+        <input type="text" id="lastName" name="lastName" required>
+      </div>
+
+      <div>
+        <label for="phone">Phone *</label>
+        <input type="text" id="phone" name="phone" required>
+      </div>
+
+      <div>
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email">
+      </div>
+
+      <div>
+        <label for="vehicleYear">Vehicle Year *</label>
+        <input type="text" id="vehicleYear" name="vehicleYear" required>
+      </div>
+
+      <div>
+        <label for="vehicleMake">Vehicle Make *</label>
+        <input type="text" id="vehicleMake" name="vehicleMake" required>
+      </div>
+
+      <div>
+        <label for="vehicleModel">Vehicle Model *</label>
+        <input type="text" id="vehicleModel" name="vehicleModel" required>
+      </div>
+
+      <div>
+        <label for="vehicleColor">Vehicle Color</label>
+        <input type="text" id="vehicleColor" name="vehicleColor">
+      </div>
+
+      <div>
+        <label for="paymentMethod">Payment Method *</label>
+        <select id="paymentMethod" name="paymentMethod" required>
+          <option value="">Select payment method</option>
+          <option value="Cash">Cash</option>
+          <option value="Check">Check</option>
+          <option value="Comp">Comp</option>
+          <option value="Awaiting Square Payment">Send Square Link</option>
+        </select>
+      </div>
+
+      <button type="submit">Complete Registration</button>
+    </form>
+
+    <div id="statusBox" class="status"></div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+    const form = document.getElementById("quickRegForm");
+    const statusBox = document.getElementById("statusBox");
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      statusBox.className = "status";
+      statusBox.style.display = "none";
+      statusBox.textContent = "";
+
+      const payload = {
+        entry_method: "quick_reg",
+        first_name: document.getElementById("firstName").value.trim(),
+        last_name: document.getElementById("lastName").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        vehicle_1_year: document.getElementById("vehicleYear").value.trim(),
+        vehicle_1_make: document.getElementById("vehicleMake").value.trim(),
+        vehicle_1_model: document.getElementById("vehicleModel").value.trim(),
+        vehicle_1_color: document.getElementById("vehicleColor").value.trim(),
+        payment_status: document.getElementById("paymentMethod").value
+      };
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          }
+        });
+
+        const result = await response.text();
+
+        statusBox.textContent = "Registration submitted successfully.";
+        statusBox.className = "status success";
+        form.reset();
+      } catch (err) {
+        statusBox.textContent = "Submission failed. Please try again.";
+        statusBox.className = "status error";
+      }
+    });
+  </script>
+</body>
+</html>
