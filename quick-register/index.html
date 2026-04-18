@@ -202,6 +202,52 @@
   const checkNumberInput = document.getElementById("checkNumber");
   const vehicleYearInput = document.getElementById("vehicleYear");
 
+  const addVehicleBtn = document.getElementById("addVehicleBtn");
+  const removeVehicleBtn = document.getElementById("removeVehicleBtn");
+  const additionalVehicles = document.getElementById("additionalVehicles");
+
+  let vehicleCount = 1;
+  const MAX_QUICK_REG_VEHICLES = 4;
+
+  function renderVehicleButtons() {
+    addVehicleBtn.style.display = vehicleCount < MAX_QUICK_REG_VEHICLES ? "inline-block" : "none";
+    removeVehicleBtn.style.display = vehicleCount > 1 ? "inline-block" : "none";
+  }
+
+  function buildVehicleBlock(vehicleNumber) {
+    return `
+      <div id="vehicleBlock${vehicleNumber}" style="margin-top:15px; padding-top:10px; border-top:1px solid #ddd;">
+        <strong>Vehicle ${vehicleNumber}</strong>
+
+        <input type="text" id="vehicle${vehicleNumber}Year" placeholder="Year" required>
+        <input type="text" id="vehicle${vehicleNumber}Make" placeholder="Make" required>
+        <input type="text" id="vehicle${vehicleNumber}Model" placeholder="Model" required>
+        <input type="text" id="vehicle${vehicleNumber}Color" placeholder="Color">
+      </div>
+    `;
+  }
+
+  function addVehicleBlock() {
+    if (vehicleCount >= MAX_QUICK_REG_VEHICLES) return;
+
+    vehicleCount++;
+    additionalVehicles.insertAdjacentHTML("beforeend", buildVehicleBlock(vehicleCount));
+    renderVehicleButtons();
+  }
+
+  function removeVehicleBlock() {
+    if (vehicleCount <= 1) return;
+
+    document.getElementById(`vehicleBlock${vehicleCount}`)?.remove();
+    vehicleCount--;
+    renderVehicleButtons();
+  }
+
+  addVehicleBtn.addEventListener("click", addVehicleBlock);
+  removeVehicleBtn.addEventListener("click", removeVehicleBlock);
+
+  renderVehicleButtons();  
+    
   function updatePaymentFields() {
   const selected = paymentMethodSelect.value;
 
@@ -272,6 +318,7 @@ updatePaymentFields();
       zip: "",
       phone,
       email,
+      vehicleCount,
       vehicle_1_year: vehicleYear,
       vehicle_1_make: vehicleMake,
       vehicle_1_model: vehicleModel,
@@ -279,6 +326,13 @@ updatePaymentFields();
       paymentMethod,
       checkNumber
     };
+
+    for (let i = 2; i <= vehicleCount; i++) {
+      payload[`vehicle_${i}_year`] = document.getElementById(`vehicle${i}Year`)?.value || "";
+      payload[`vehicle_${i}_make`] = document.getElementById(`vehicle${i}Make`)?.value || "";
+      payload[`vehicle_${i}_model`] = document.getElementById(`vehicle${i}Model`)?.value || "";
+      payload[`vehicle_${i}_color`] = document.getElementById(`vehicle${i}Color`)?.value || "";
+    }
 
     try {
       const response = await fetch(SCRIPT_URL, {
@@ -293,7 +347,17 @@ updatePaymentFields();
 
       if (!result.success) throw new Error(result.error || "Unknown error");
 
-      const vehicleLine = [vehicleYear, vehicleMake, vehicleModel].filter(Boolean).join(" ");
+      let vehicleLine = `${vehicleYear} ${vehicleMake} ${vehicleModel}`;
+
+      for (let i = 2; i <= vehicleCount; i++) {
+        const y = document.getElementById(`vehicle${i}Year`)?.value || "";
+        const m = document.getElementById(`vehicle${i}Make`)?.value || "";
+        const mo = document.getElementById(`vehicle${i}Model`)?.value || "";
+
+        if (y || m || mo) {
+          vehicleLine += `<br>Vehicle ${i}: ${y} ${m} ${mo}`;
+        }
+      }
 
       let paymentMethodText = paymentMethod === "Awaiting Square Payment" ? "Square" : paymentMethod;
       let paymentStatusText = paymentMethod === "Awaiting Square Payment"
