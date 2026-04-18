@@ -369,6 +369,19 @@ updatePaymentFields();
         checkNumberHtml = `<div><strong>Check #:</strong> ${checkNumber}</div>`;
       }
 
+      let squareLinkHtml = "";
+
+      if (paymentMethod === "Awaiting Square Payment" && result.squareLink) {
+        squareLinkHtml = `
+          <div style="margin-top:20px;">
+            <a href="${result.squareLink}" target="_blank"
+               style="display:block;padding:14px;background:#28a745;color:#fff;
+                      text-decoration:none;border-radius:8px;font-weight:bold;">
+              Take Payment (Square)
+            </a>
+          </div>
+        `;
+      }
       successContent.innerHTML = `
         <div style="font-size:2rem;font-weight:bold;margin-bottom:15px;">
           ${result.regId || ""}
@@ -397,6 +410,7 @@ updatePaymentFields();
 
         <div><strong>Payment Status:</strong> ${paymentStatusText}</div>
         ${checkNumberHtml}
+        ${squareLinkHtml}
 
         <div style="margin-top:15px; font-style:italic;">
           Use this Reg ID on the window card
