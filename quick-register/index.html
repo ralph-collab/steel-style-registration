@@ -117,7 +117,7 @@
 
       <div>
         <label for="vehicleYear">Vehicle Year *</label>
-        <input type="text" id="vehicleYear" name="vehicleYear" required>
+        <input type="text" id="vehicleYear" name="vehicleYear" required inputmode="numeric" maxlength="4" pattern="\d{4}">
       </div>
 
       <div>
@@ -144,6 +144,11 @@
           <option value="Comp">Comp</option>
           <option value="Awaiting Square Payment">Send Square Link</option>
         </select>
+      </div>
+
+      <div id="checkNumberWrap" style="display:none;">
+        <label for="checkNumber">Check # *</label>
+        <input type="text" id="checkNumber" name="checkNumber" maxlength="20">
       </div>
 
       <button type="submit">Complete Registration</button>
@@ -174,8 +179,6 @@
 
   <script>
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTBUAyYc3m-m16MNaDb_BspRgsf8ECAq1vsG3IndH_psFbwdo74_3mh0pk1FzmYhjcJw/exec";
-
-  // 🔁 TOGGLE PRINT FEATURE HERE
   const ENABLE_WINDOW_CARD_PRINT = true;
 
   const form = document.getElementById("quickRegForm");
@@ -183,6 +186,28 @@
   const successContent = document.getElementById("successContent");
   const nextBtn = document.getElementById("nextBtn");
   const printBtnContainer = document.getElementById("printBtnContainer");
+  const paymentMethodSelect = document.getElementById("paymentMethod");
+  const checkNumberWrap = document.getElementById("checkNumberWrap");
+  const checkNumberInput = document.getElementById("checkNumber");
+  const vehicleYearInput = document.getElementById("vehicleYear");
+
+  function updatePaymentFields() {
+    if (paymentMethodSelect.value === "Check") {
+      checkNumberWrap.style.display = "block";
+      checkNumberInput.required = true;
+    } else {
+      checkNumberWrap.style.display = "none";
+      checkNumberInput.required = false;
+      checkNumberInput.value = "";
+    }
+  }
+
+  paymentMethodSelect.addEventListener("change", updatePaymentFields);
+  updatePaymentFields();
+
+  vehicleYearInput.addEventListener("input", function () {
+    this.value = this.value.replace(/\D/g, "").slice(0, 4);
+  });
 
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
@@ -191,16 +216,33 @@
     submitButton.disabled = true;
     submitButton.textContent = "Submitting...";
 
-    const paymentMethod = document.getElementById("paymentMethod").value;
+    const paymentMethod = paymentMethodSelect.value;
+    const checkNumber = checkNumberInput.value.trim();
 
     const firstName = document.getElementById("firstName").value.trim();
     const lastName = document.getElementById("lastName").value.trim();
     const phone = document.getElementById("phone").value.trim();
     const email = document.getElementById("email").value.trim();
-    const vehicleYear = document.getElementById("vehicleYear").value.trim();
+    const vehicleYear = vehicleYearInput.value.trim();
     const vehicleMake = document.getElementById("vehicleMake").value.trim();
     const vehicleModel = document.getElementById("vehicleModel").value.trim();
     const vehicleColor = document.getElementById("vehicleColor").value.trim();
+
+    if (!/^\d{4}$/.test(vehicleYear)) {
+      alert("Vehicle Year must be exactly 4 digits.");
+      submitButton.disabled = false;
+      submitButton.textContent = "Complete Registration";
+      vehicleYearInput.focus();
+      return;
+    }
+
+    if (paymentMethod === "Check" && !checkNumber) {
+      alert("Please enter the check number.");
+      submitButton.disabled = false;
+      submitButton.textContent = "Complete Registration";
+      checkNumberInput.focus();
+      return;
+    }
 
     const payload = {
       entry_method: "quick_reg",
@@ -216,7 +258,8 @@
       vehicle_1_make: vehicleMake,
       vehicle_1_model: vehicleModel,
       vehicle_1_color: vehicleColor,
-      paymentMethod
+      paymentMethod,
+      checkNumber
     };
 
     try {
@@ -230,7 +273,7 @@
 
       const result = await response.json();
 
-      if (!result.success) throw new Error();
+      if (!result.success) throw new Error(result.error || "Unknown error");
 
       const vehicleLine = [vehicleYear, vehicleMake, vehicleModel].filter(Boolean).join(" ");
 
@@ -239,10 +282,21 @@
         ? "Awaiting Square Payment"
         : paymentMethod;
 
-      // 🔥 BUILD SUCCESS VIEW
+      let checkNumberHtml = "";
+      if (paymentMethod === "Check" && checkNumber) {
+        checkNumberHtml = `<div><strong>Check #:</strong> ${checkNumber}</div>`;
+      }
+
       successContent.innerHTML = `
         <div style="font-size:2rem;font-weight:bold;margin-bottom:15px;">
           ${result.regId || ""}
+        </div>
+
+        <div style="margin-bottom:15px;">
+          <button type="button" id="copyRegIdBtn" style="padding:10px 14px;font-size:1rem;border:none;border-radius:8px;background:#444;color:#fff;font-weight:bold;cursor:pointer;">
+            Copy Reg ID
+          </button>
+          <div id="copyRegIdMsg" style="margin-top:8px;font-size:0.95rem;color:#155724;"></div>
         </div>
 
         <div><strong>Name:</strong> ${firstName} ${lastName}</div>
@@ -260,17 +314,30 @@
         </div>
 
         <div><strong>Payment Status:</strong> ${paymentStatusText}</div>
+        ${checkNumberHtml}
 
         <div style="margin-top:15px; font-style:italic;">
           Use this Reg ID on the window card
         </div>
       `;
 
-      // 🔁 TOGGLE VIEWS
       form.style.display = "none";
       successView.style.display = "block";
 
-      // 🖨️ PRINT BUTTON (OPTIONAL)
+      const copyBtn = document.getElementById("copyRegIdBtn");
+      const copyMsg = document.getElementById("copyRegIdMsg");
+
+      if (copyBtn && result.regId) {
+        copyBtn.addEventListener("click", async function () {
+          try {
+            await navigator.clipboard.writeText(result.regId);
+            copyMsg.textContent = "Reg ID copied.";
+          } catch (err) {
+            copyMsg.textContent = "Unable to copy Reg ID.";
+          }
+        });
+      }
+
       if (ENABLE_WINDOW_CARD_PRINT) {
         printBtnContainer.innerHTML = `
           <button id="printBtn" style="width:100%;padding:12px;font-size:1rem;border:none;border-radius:8px;background:#444;color:#fff;font-weight:bold;cursor:pointer;">
@@ -281,30 +348,33 @@
         document.getElementById("printBtn").addEventListener("click", function () {
           printWindowCard({
             regId: result.regId,
-            name: `${firstName} ${lastName}`,
+            name: \`\${firstName} \${lastName}\`,
             vehicle: vehicleLine,
             color: vehicleColor
           });
         });
+      } else {
+        printBtnContainer.innerHTML = "";
       }
 
       form.reset();
+      updatePaymentFields();
       submitButton.disabled = false;
       submitButton.textContent = "Complete Registration";
 
     } catch (err) {
       alert("Submission failed. Please try again.");
+      submitButton.disabled = false;
+      submitButton.textContent = "Complete Registration";
     }
   });
 
-  // 🔁 NEXT REGISTRATION BUTTON
   nextBtn.addEventListener("click", function () {
     successView.style.display = "none";
     form.style.display = "block";
     document.getElementById("firstName").focus();
   });
 
-  // 🖨️ SIMPLE PRINT FUNCTION
   function printWindowCard(data) {
     const printWindow = window.open("", "", "width=600,height=600");
 
@@ -315,10 +385,10 @@
         </head>
         <body style="font-family:Arial;text-align:center;padding:20px;">
           <h1>Steel & Style</h1>
-          <h2>${data.regId}</h2>
-          <p>${data.name}</p>
-          <p>${data.vehicle}</p>
-          <p>${data.color}</p>
+          <h2>${data.regId || ""}</h2>
+          <p>${data.name || ""}</p>
+          <p>${data.vehicle || ""}</p>
+          <p>${data.color || ""}</p>
         </body>
       </html>
     `);
