@@ -192,18 +192,25 @@
   const vehicleYearInput = document.getElementById("vehicleYear");
 
   function updatePaymentFields() {
-    if (paymentMethodSelect.value === "Check") {
-      checkNumberWrap.style.display = "block";
-      checkNumberInput.required = true;
-    } else {
-      checkNumberWrap.style.display = "none";
-      checkNumberInput.required = false;
-      checkNumberInput.value = "";
-    }
-  }
+  const selected = paymentMethodSelect.value;
 
-  paymentMethodSelect.addEventListener("change", updatePaymentFields);
+  if (selected === "Check") {
+    checkNumberWrap.style.display = "block";
+    checkNumberInput.required = true;
+  } else {
+    checkNumberWrap.style.display = "none";
+    checkNumberInput.required = false;
+    checkNumberInput.value = "";
+  }
+}
+
+// Event listener
+paymentMethodSelect.addEventListener("change", function () {
   updatePaymentFields();
+});
+
+// Initialize on page load
+updatePaymentFields();
 
   vehicleYearInput.addEventListener("input", function () {
     this.value = this.value.replace(/\D/g, "").slice(0, 4);
@@ -348,7 +355,7 @@
         document.getElementById("printBtn").addEventListener("click", function () {
           printWindowCard({
             regId: result.regId,
-            name: \`\${firstName} \${lastName}\`,
+            name: `${firstName} ${lastName}`,
             vehicle: vehicleLine,
             color: vehicleColor
           });
