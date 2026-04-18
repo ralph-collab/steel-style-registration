@@ -153,56 +153,125 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTBUAyYc3m-m16MNaDb_BspRgsf8ECAq1vsG3IndH_psFbwdo74_3mh0pk1FzmYhjcJw/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTBUAyYc3m-m16MNaDb_BspRgsf8ECAq1vsG3IndH_psFbwdo74_3mh0pk1FzmYhjcJw/exec";
 
-    const form = document.getElementById("quickRegForm");
-    const statusBox = document.getElementById("statusBox");
+  const form = document.getElementById("quickRegForm");
+  const statusBox = document.getElementById("statusBox");
+  const submitButton = form.querySelector('button[type="submit"]');
 
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
 
-      statusBox.className = "status";
-      statusBox.style.display = "none";
-      statusBox.textContent = "";
+    statusBox.style.display = "block";
+    statusBox.className = "status success";
+    statusBox.innerHTML = "<strong>Submitting registration...</strong>";
 
-      const paymentMethod = document.getElementById("paymentMethod").value;
+    submitButton.disabled = true;
+    submitButton.textContent = "Submitting...";
 
-      const payload = {
-        entry_method: "quick_reg",
-        firstName: document.getElementById("firstName").value.trim(),
-        lastName: document.getElementById("lastName").value.trim(),
-        address: "",
-        city: "",
-        state: "",
-        zip: "",
-        phone: document.getElementById("phone").value.trim(),
-        email: document.getElementById("email").value.trim(),
-        vehicle_1_year: document.getElementById("vehicleYear").value.trim(),
-        vehicle_1_make: document.getElementById("vehicleMake").value.trim(),
-        vehicle_1_model: document.getElementById("vehicleModel").value.trim(),
-        vehicle_1_color: document.getElementById("vehicleColor").value.trim(),
-        paymentMethod: paymentMethod
-      };
+    const paymentMethod = document.getElementById("paymentMethod").value;
 
-      try {
-        const response = await fetch(SCRIPT_URL, {
-          method: "POST",
-          body: JSON.stringify(payload),
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-          }
-        });
+    const firstName = document.getElementById("firstName").value.trim();
+    const lastName = document.getElementById("lastName").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const vehicleYear = document.getElementById("vehicleYear").value.trim();
+    const vehicleMake = document.getElementById("vehicleMake").value.trim();
+    const vehicleModel = document.getElementById("vehicleModel").value.trim();
+    const vehicleColor = document.getElementById("vehicleColor").value.trim();
 
-        const result = await response.text();
+    const payload = {
+      entry_method: "quick_reg",
+      firstName: firstName,
+      lastName: lastName,
+      address: "",
+      city: "",
+      state: "",
+      zip: "",
+      phone: phone,
+      email: email,
+      vehicle_1_year: vehicleYear,
+      vehicle_1_make: vehicleMake,
+      vehicle_1_model: vehicleModel,
+      vehicle_1_color: vehicleColor,
+      paymentMethod: paymentMethod
+    };
 
-        statusBox.textContent = "Registration submitted successfully.";
-        statusBox.className = "status success";
-        form.reset();
-      } catch (err) {
-        statusBox.textContent = "Submission failed. Please try again.";
-        statusBox.className = "status error";
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        }
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Unknown error");
       }
-    });
-  </script>
+
+      const vehicleLine = [vehicleYear, vehicleMake, vehicleModel].filter(Boolean).join(" ");
+      let paymentStatusText = paymentMethod;
+      let paymentMethodText = paymentMethod;
+
+      if (paymentMethod === "Awaiting Square Payment") {
+        paymentStatusText = "Awaiting Square Payment";
+        paymentMethodText = "Square";
+      }
+
+      let html = `
+        <strong style="font-size:1.2rem;">Registration Successful</strong><br><br>
+        <strong>Reg ID:</strong> ${result.regId || ""}<br>
+        <strong>Name:</strong> ${firstName} ${lastName}<br>
+        <strong>Phone:</strong> ${phone || "-"}<br>
+        <strong>Email:</strong> ${email || "-"}<br>
+        <strong>Vehicle:</strong> ${vehicleLine || "-"}<br>
+        <strong>Color:</strong> ${vehicleColor || "-"}<br>
+        <strong>Payment Method:</strong> ${paymentMethodText}<br>
+        <strong>Payment Status:</strong> ${paymentStatusText}<br>
+      `;
+
+      if (result.paymentLink && paymentMethod === "Awaiting Square Payment") {
+        html += `<strong>Payment Link:</strong> <a href="${result.paymentLink}" target="_blank" rel="noopener">Open Payment Link</a><br>`;
+      }
+
+      html += `
+        <br>
+        <em>Use this Reg ID on the handwritten window card if needed.</em>
+        <br><br>
+        <button type="button" id="nextRegistrationBtn" style="width:100%;padding:12px;font-size:1rem;border:none;border-radius:8px;background:#8b0000;color:#fff;font-weight:bold;cursor:pointer;">
+          Start Next Registration
+        </button>
+      `;
+
+      statusBox.innerHTML = html;
+      statusBox.className = "status success";
+      statusBox.style.display = "block";
+
+      form.reset();
+      submitButton.disabled = false;
+      submitButton.textContent = "Complete Registration";
+
+      const nextBtn = document.getElementById("nextRegistrationBtn");
+      if (nextBtn) {
+        nextBtn.addEventListener("click", function () {
+          statusBox.textContent = "";
+          statusBox.className = "status";
+          statusBox.style.display = "none";
+          document.getElementById("firstName").focus();
+        });
+      }
+
+    } catch (err) {
+      statusBox.textContent = "Submission failed. Please try again.";
+      statusBox.className = "status error";
+      statusBox.style.display = "block";
+      submitButton.disabled = false;
+      submitButton.textContent = "Complete Registration";
+    }
+  });
+</script>
 </body>
 </html>
