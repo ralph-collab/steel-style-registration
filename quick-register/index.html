@@ -347,16 +347,41 @@ updatePaymentFields();
 
       if (!result.success) throw new Error(result.error || "Unknown error");
 
-      let vehicleLine = `${vehicleYear} ${vehicleMake} ${vehicleModel}`;
+      const vehicles = [];
 
+      // Vehicle 1
+      vehicles.push({
+        year: vehicleYear,
+        make: vehicleMake,
+        model: vehicleModel,
+        color: vehicleColor,
+        vehicleId: result.vehicleIds ? result.vehicleIds[0] : ""
+      });
+
+      // Additional vehicles
       for (let i = 2; i <= vehicleCount; i++) {
-        const y = document.getElementById(`vehicle${i}Year`)?.value || "";
-        const m = document.getElementById(`vehicle${i}Make`)?.value || "";
-        const mo = document.getElementById(`vehicle${i}Model`)?.value || "";
+        vehicles.push({
+          year: document.getElementById(`vehicle${i}Year`)?.value || "",
+          make: document.getElementById(`vehicle${i}Make`)?.value || "",
+          model: document.getElementById(`vehicle${i}Model`)?.value || "",
+          color: document.getElementById(`vehicle${i}Color`)?.value || "",
+          vehicleId: result.vehicleIds ? result.vehicleIds[i - 1] : ""
+        });
+      }
 
-        if (y || m || mo) {
-          vehicleLine += `<br>Vehicle ${i}: ${y} ${m} ${mo}`;
-        }
+      const vehicleLine = vehicles.map((v, idx) => {
+        const total = vehicles.length;
+        const text = [v.year, v.make, v.model].filter(Boolean).join(" ");
+
+        return `
+          <div style="margin-top:12px;">
+            <strong>Vehicle ${idx + 1} of ${total}</strong><br>
+            ${text || "-"}<br>
+            <strong>Color:</strong> ${v.color || "-"}<br>
+            <strong>ID:</strong> ${v.vehicleId || "-"}
+          </div>
+        `;
+      }).join("");
       }
 
       let paymentMethodText = paymentMethod === "Awaiting Square Payment" ? "Square" : paymentMethod;
@@ -371,10 +396,10 @@ updatePaymentFields();
 
       let squareLinkHtml = "";
 
-      if (paymentMethod === "Awaiting Square Payment" && result.squareLink) {
+      if (paymentMethod === "Awaiting Square Payment" && result.paymentLink) {
         squareLinkHtml = `
           <div style="margin-top:20px;">
-            <a href="${result.squareLink}" target="_blank"
+            <a href="${result.paymentLink}" target="_blank"
                style="display:block;padding:14px;background:#28a745;color:#fff;
                       text-decoration:none;border-radius:8px;font-weight:bold;">
               Take Payment (Square)
@@ -399,10 +424,8 @@ updatePaymentFields();
         <div><strong>Email:</strong> ${email || "-"}</div>
 
         <div style="margin-top:10px;">
-          <strong>Vehicle:</strong> ${vehicleLine || "-"}
+          ${vehicleLine}
         </div>
-
-        <div><strong>Color:</strong> ${vehicleColor || "-"}</div>
 
         <div style="margin-top:10px;">
           <strong>Payment Method:</strong> ${paymentMethodText}
@@ -472,19 +495,50 @@ updatePaymentFields();
   });
 
   function printWindowCard(data) {
-    const printWindow = window.open("", "", "width=600,height=600");
+    const printWindow = window.open("", "", "width=900,height=700");
+
+    const cards = data.vehicles.map((v, idx) => {
+      const text = [v.year, v.make, v.model].filter(Boolean).join(" ");
+
+      return `
+        <div style="page-break-after:always;border:2px solid #000;padding:30px;margin:20px;text-align:center;font-family:Arial;">
+        
+          <div style="font-size:32px;font-weight:bold;margin-bottom:10px;">
+            Steel & Style
+          </div>
+
+          <div style="font-size:18px;margin-bottom:20px;">
+            Helena, Montana
+          </div>
+
+          <div style="font-size:36px;font-weight:bold;margin-bottom:20px;">
+            ${v.vehicleId || ""}
+          </div>
+
+          <div style="font-size:24px;margin-bottom:10px;">
+            ${text || ""}
+          </div>
+
+          <div style="font-size:20px;margin-bottom:10px;">
+            Color: ${v.color || "-"}
+          </div>
+
+          <div style="font-size:18px;margin-bottom:10px;">
+            Owner: ${data.name || ""}
+          </div>
+
+          <div style="font-size:14px;color:#555;">
+            Reg ID: ${data.regId || ""}
+          </div>
+
+        </div>
+      `;
+    }).join("");
 
     printWindow.document.write(`
       <html>
-        <head>
-          <title>Window Card</title>
-        </head>
-        <body style="font-family:Arial;text-align:center;padding:20px;">
-          <h1>Steel & Style</h1>
-          <h2>${data.regId || ""}</h2>
-          <p>${data.name || ""}</p>
-          <p>${data.vehicle || ""}</p>
-          <p>${data.color || ""}</p>
+        <body style="margin:0;">
+          ${cards}
         </body>
       </html>
     `);
