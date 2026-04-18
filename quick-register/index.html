@@ -135,7 +135,18 @@
         <input type="text" id="vehicleColor" name="vehicleColor">
       </div>
 
-      <div>
+      <div style="display:flex; gap:10px;">
+        <button type="button" id="addVehicleBtn" style="background:#444; width:auto; flex:1;">
+          Add Another Vehicle
+        </button>
+        <button type="button" id="removeVehicleBtn" style="background:#777; display:none; width:auto; flex:1;">
+          Remove Last Vehicle
+        </button>
+      </div>
+
+      <div id="additionalVehicles"></div>
+
+      <div style="margin-top:10px;">
         <label for="paymentMethod">Payment Method *</label>
         <select id="paymentMethod" name="paymentMethod" required>
           <option value="">Select payment method</option>
