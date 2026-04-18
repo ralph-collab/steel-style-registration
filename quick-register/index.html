@@ -464,13 +464,12 @@ updatePaymentFields();
         `;
 
         document.getElementById("printBtn").addEventListener("click", function () {
-          printWindowCard({
-            regId: result.regId,
-            name: `${firstName} ${lastName}`,
-            vehicle: vehicleLine,
-            color: vehicleColor
-          });
-        });
+  printWindowCard({
+    regId: result.regId,
+    name: `${firstName} ${lastName}`,
+    vehicles: vehicles
+  });
+});
       } else {
         printBtnContainer.innerHTML = "";
       }
