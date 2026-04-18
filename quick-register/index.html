@@ -165,17 +165,23 @@
       statusBox.style.display = "none";
       statusBox.textContent = "";
 
+      const paymentMethod = document.getElementById("paymentMethod").value;
+
       const payload = {
         entry_method: "quick_reg",
-        first_name: document.getElementById("firstName").value.trim(),
-        last_name: document.getElementById("lastName").value.trim(),
+        firstName: document.getElementById("firstName").value.trim(),
+        lastName: document.getElementById("lastName").value.trim(),
+        address: "",
+        city: "",
+        state: "",
+        zip: "",
         phone: document.getElementById("phone").value.trim(),
         email: document.getElementById("email").value.trim(),
         vehicle_1_year: document.getElementById("vehicleYear").value.trim(),
         vehicle_1_make: document.getElementById("vehicleMake").value.trim(),
         vehicle_1_model: document.getElementById("vehicleModel").value.trim(),
         vehicle_1_color: document.getElementById("vehicleColor").value.trim(),
-        payment_status: document.getElementById("paymentMethod").value
+        paymentMethod: paymentMethod
       };
 
       try {
