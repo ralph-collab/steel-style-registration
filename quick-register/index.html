@@ -149,23 +149,45 @@
       <button type="submit">Complete Registration</button>
     </form>
 
+    <!-- ✅ PASTE THIS RIGHT HERE -->
+    <div id="successView" style="display:none; padding:20px; text-align:center;">
+
+      <h2 style="color:green; font-size:2rem; margin-bottom:10px;">
+     Registration Successful
+      </h2>
+
+      <div id="successContent" style="font-size:1.1rem; line-height:1.6;"></div>
+
+      <div style="margin-top:25px;">
+        <button id="nextBtn" style="width:100%;padding:14px;font-size:1.1rem;border:none;border-radius:8px;background:#8b0000;color:#fff;font-weight:bold;cursor:pointer;">
+          Start Next Registration
+        </button>
+      </div>
+
+      <div id="printBtnContainer" style="margin-top:10px;"></div>
+
+    </div>
+    <!-- ✅ END PASTE -->
+
     <div id="statusBox" class="status"></div>
   </div>
 
   <script>
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTBUAyYc3m-m16MNaDb_BspRgsf8ECAq1vsG3IndH_psFbwdo74_3mh0pk1FzmYhjcJw/exec";
 
+  // 🔁 TOGGLE PRINT FEATURE HERE
+  const ENABLE_WINDOW_CARD_PRINT = true;
+
   const form = document.getElementById("quickRegForm");
-  const statusBox = document.getElementById("statusBox");
-  const submitButton = form.querySelector('button[type="submit"]');
+  const successView = document.getElementById("successView");
+  const successContent = document.getElementById("successContent");
+  const nextBtn = document.getElementById("nextBtn");
+  const printBtnContainer = document.getElementById("printBtnContainer");
 
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
 
-    statusBox.style.display = "block";
-    statusBox.className = "status success";
-    statusBox.innerHTML = "<strong>Submitting registration...</strong>";
-
+    const submitButton = form.querySelector('button[type="submit"]');
     submitButton.disabled = true;
     submitButton.textContent = "Submitting...";
 
@@ -182,19 +204,19 @@
 
     const payload = {
       entry_method: "quick_reg",
-      firstName: firstName,
-      lastName: lastName,
+      firstName,
+      lastName,
       address: "",
       city: "",
       state: "",
       zip: "",
-      phone: phone,
-      email: email,
+      phone,
+      email,
       vehicle_1_year: vehicleYear,
       vehicle_1_make: vehicleMake,
       vehicle_1_model: vehicleModel,
       vehicle_1_color: vehicleColor,
-      paymentMethod: paymentMethod
+      paymentMethod
     };
 
     try {
@@ -208,70 +230,102 @@
 
       const result = await response.json();
 
-      if (!result.success) {
-        throw new Error(result.error || "Unknown error");
-      }
+      if (!result.success) throw new Error();
 
       const vehicleLine = [vehicleYear, vehicleMake, vehicleModel].filter(Boolean).join(" ");
-      let paymentStatusText = paymentMethod;
-      let paymentMethodText = paymentMethod;
 
-      if (paymentMethod === "Awaiting Square Payment") {
-        paymentStatusText = "Awaiting Square Payment";
-        paymentMethodText = "Square";
-      }
+      let paymentMethodText = paymentMethod === "Awaiting Square Payment" ? "Square" : paymentMethod;
+      let paymentStatusText = paymentMethod === "Awaiting Square Payment"
+        ? "Awaiting Square Payment"
+        : paymentMethod;
 
-      let html = `
-        <strong style="font-size:1.2rem;">Registration Successful</strong><br><br>
-        <strong>Reg ID:</strong> ${result.regId || ""}<br>
-        <strong>Name:</strong> ${firstName} ${lastName}<br>
-        <strong>Phone:</strong> ${phone || "-"}<br>
-        <strong>Email:</strong> ${email || "-"}<br>
-        <strong>Vehicle:</strong> ${vehicleLine || "-"}<br>
-        <strong>Color:</strong> ${vehicleColor || "-"}<br>
-        <strong>Payment Method:</strong> ${paymentMethodText}<br>
-        <strong>Payment Status:</strong> ${paymentStatusText}<br>
+      // 🔥 BUILD SUCCESS VIEW
+      successContent.innerHTML = `
+        <div style="font-size:2rem;font-weight:bold;margin-bottom:15px;">
+          ${result.regId || ""}
+        </div>
+
+        <div><strong>Name:</strong> ${firstName} ${lastName}</div>
+        <div><strong>Phone:</strong> ${phone || "-"}</div>
+        <div><strong>Email:</strong> ${email || "-"}</div>
+
+        <div style="margin-top:10px;">
+          <strong>Vehicle:</strong> ${vehicleLine || "-"}
+        </div>
+
+        <div><strong>Color:</strong> ${vehicleColor || "-"}</div>
+
+        <div style="margin-top:10px;">
+          <strong>Payment Method:</strong> ${paymentMethodText}
+        </div>
+
+        <div><strong>Payment Status:</strong> ${paymentStatusText}</div>
+
+        <div style="margin-top:15px; font-style:italic;">
+          Use this Reg ID on the window card
+        </div>
       `;
 
-      if (result.paymentLink && paymentMethod === "Awaiting Square Payment") {
-        html += `<strong>Payment Link:</strong> <a href="${result.paymentLink}" target="_blank" rel="noopener">Open Payment Link</a><br>`;
+      // 🔁 TOGGLE VIEWS
+      form.style.display = "none";
+      successView.style.display = "block";
+
+      // 🖨️ PRINT BUTTON (OPTIONAL)
+      if (ENABLE_WINDOW_CARD_PRINT) {
+        printBtnContainer.innerHTML = `
+          <button id="printBtn" style="width:100%;padding:12px;font-size:1rem;border:none;border-radius:8px;background:#444;color:#fff;font-weight:bold;cursor:pointer;">
+            Print Window Card
+          </button>
+        `;
+
+        document.getElementById("printBtn").addEventListener("click", function () {
+          printWindowCard({
+            regId: result.regId,
+            name: `${firstName} ${lastName}`,
+            vehicle: vehicleLine,
+            color: vehicleColor
+          });
+        });
       }
-
-      html += `
-        <br>
-        <em>Use this Reg ID on the handwritten window card if needed.</em>
-        <br><br>
-        <button type="button" id="nextRegistrationBtn" style="width:100%;padding:12px;font-size:1rem;border:none;border-radius:8px;background:#8b0000;color:#fff;font-weight:bold;cursor:pointer;">
-          Start Next Registration
-        </button>
-      `;
-
-      statusBox.innerHTML = html;
-      statusBox.className = "status success";
-      statusBox.style.display = "block";
 
       form.reset();
       submitButton.disabled = false;
       submitButton.textContent = "Complete Registration";
 
-      const nextBtn = document.getElementById("nextRegistrationBtn");
-      if (nextBtn) {
-        nextBtn.addEventListener("click", function () {
-          statusBox.textContent = "";
-          statusBox.className = "status";
-          statusBox.style.display = "none";
-          document.getElementById("firstName").focus();
-        });
-      }
-
     } catch (err) {
-      statusBox.textContent = "Submission failed. Please try again.";
-      statusBox.className = "status error";
-      statusBox.style.display = "block";
-      submitButton.disabled = false;
-      submitButton.textContent = "Complete Registration";
+      alert("Submission failed. Please try again.");
     }
   });
+
+  // 🔁 NEXT REGISTRATION BUTTON
+  nextBtn.addEventListener("click", function () {
+    successView.style.display = "none";
+    form.style.display = "block";
+    document.getElementById("firstName").focus();
+  });
+
+  // 🖨️ SIMPLE PRINT FUNCTION
+  function printWindowCard(data) {
+    const printWindow = window.open("", "", "width=600,height=600");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Window Card</title>
+        </head>
+        <body style="font-family:Arial;text-align:center;padding:20px;">
+          <h1>Steel & Style</h1>
+          <h2>${data.regId}</h2>
+          <p>${data.name}</p>
+          <p>${data.vehicle}</p>
+          <p>${data.color}</p>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.print();
+  }
 </script>
 </body>
 </html>
