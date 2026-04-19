@@ -228,12 +228,24 @@
   }
 
   function addVehicleBlock() {
-    if (vehicleCount >= MAX_QUICK_REG_VEHICLES) return;
+  if (vehicleCount >= MAX_QUICK_REG_VEHICLES) return;
 
-    vehicleCount++;
-    additionalVehicles.insertAdjacentHTML("beforeend", buildVehicleBlock(vehicleCount));
-    renderVehicleButtons();
-  }
+  vehicleCount++;
+  additionalVehicles.insertAdjacentHTML("beforeend", buildVehicleBlock(vehicleCount));
+
+  const newYearInput = document.getElementById(`vehicle${vehicleCount}Year`);
+  attachYearLimiter(newYearInput);
+
+  renderVehicleButtons();
+}
+
+  function attachYearLimiter(input) {
+  if (!input) return;
+
+  input.addEventListener("input", function () {
+    this.value = this.value.replace(/\D/g, "").slice(0, 4);
+  });
+}  
 
   function removeVehicleBlock() {
     if (vehicleCount <= 1) return;
@@ -273,9 +285,7 @@ paymentMethodSelect.addEventListener("change", function () {
 // Initialize on page load
 updatePaymentFields();
 
-  vehicleYearInput.addEventListener("input", function () {
-    this.value = this.value.replace(/\D/g, "").slice(0, 4);
-  });
+  attachYearLimiter(vehicleYearInput);
 
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
