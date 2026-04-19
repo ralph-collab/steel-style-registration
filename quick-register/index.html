@@ -242,7 +242,11 @@
     vehicleCount--;
     renderVehicleButtons();
   }
-
+  function resetVehicleBlocks() {
+    additionalVehicles.innerHTML = "";
+    vehicleCount = 1;
+    renderVehicleButtons();
+  }
   addVehicleBtn.addEventListener("click", addVehicleBlock);
   removeVehicleBtn.addEventListener("click", removeVehicleBlock);
 
@@ -487,10 +491,15 @@ updatePaymentFields();
   });
 
   nextBtn.addEventListener("click", function () {
-    successView.style.display = "none";
-    form.style.display = "block";
-    document.getElementById("firstName").focus();
-  });
+  form.reset();
+  resetVehicleBlocks();
+  updatePaymentFields();
+
+  successView.style.display = "none";
+  form.style.display = "block";
+
+  document.getElementById("firstName").focus();
+});
 
   function printWindowCard(data) {
     const printWindow = window.open("", "", "width=900,height=700");
