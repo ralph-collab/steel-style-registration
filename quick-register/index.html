@@ -146,6 +146,10 @@
 
       <div id="additionalVehicles"></div>
 
+      <div id="liveTotalWrap" style="margin-top:10px; padding:12px; border:1px solid #d6c9a8; border-radius:8px; background:#faf7ef; font-weight:bold; display:none;">
+        Registration Total: <span id="liveTotalAmount">$30.00</span>
+      </div>
+
       <div style="margin-top:10px;">
         <label for="paymentMethod">Payment Method *</label>
         <select id="paymentMethod" name="paymentMethod" required>
@@ -191,6 +195,7 @@
   <script>
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTBUAyYc3m-m16MNaDb_BspRgsf8ECAq1vsG3IndH_psFbwdo74_3mh0pk1FzmYhjcJw/exec";
   const ENABLE_WINDOW_CARD_PRINT = true;
+  const ENABLE_LIVE_TOTAL = true;
 
   const form = document.getElementById("quickRegForm");
   const successView = document.getElementById("successView");
@@ -201,6 +206,8 @@
   const checkNumberWrap = document.getElementById("checkNumberWrap");
   const checkNumberInput = document.getElementById("checkNumber");
   const vehicleYearInput = document.getElementById("vehicleYear");
+  const liveTotalWrap = document.getElementById("liveTotalWrap");
+  const liveTotalAmount = document.getElementById("liveTotalAmount");  
 
   const addVehicleBtn = document.getElementById("addVehicleBtn");
   const removeVehicleBtn = document.getElementById("removeVehicleBtn");
@@ -213,7 +220,22 @@
     addVehicleBtn.style.display = vehicleCount < MAX_QUICK_REG_VEHICLES ? "inline-block" : "none";
     removeVehicleBtn.style.display = vehicleCount > 1 ? "inline-block" : "none";
   }
+  function calculateLiveTotal() {
+  const basePrice = 30;
+  const additionalPrice = 5;
+  return basePrice + Math.max(0, vehicleCount - 1) * additionalPrice;
+  }
 
+  function updateLiveTotal() {
+    if (!ENABLE_LIVE_TOTAL) {
+      liveTotalWrap.style.display = "none";
+      return;
+    }
+
+    const total = calculateLiveTotal();
+    liveTotalAmount.textContent = `$${total}.00`;
+    liveTotalWrap.style.display = "block";
+  }
   function buildVehicleBlock(vehicleNumber) {
     return `
       <div id="vehicleBlock${vehicleNumber}" style="margin-top:15px; padding-top:10px; border-top:1px solid #ddd;">
@@ -237,7 +259,8 @@
   attachYearLimiter(newYearInput);
 
   renderVehicleButtons();
-}
+  updateLiveTotal();
+  }
 
   function attachYearLimiter(input) {
   if (!input) return;
@@ -248,21 +271,24 @@
 }  
 
   function removeVehicleBlock() {
-    if (vehicleCount <= 1) return;
+  if (vehicleCount <= 1) return;
 
-    document.getElementById(`vehicleBlock${vehicleCount}`)?.remove();
-    vehicleCount--;
-    renderVehicleButtons();
-  }
+  document.getElementById(`vehicleBlock${vehicleCount}`)?.remove();
+  vehicleCount--;
+  renderVehicleButtons();
+  updateLiveTotal();
+}
   function resetVehicleBlocks() {
-    additionalVehicles.innerHTML = "";
-    vehicleCount = 1;
-    renderVehicleButtons();
-  }
+  additionalVehicles.innerHTML = "";
+  vehicleCount = 1;
+  renderVehicleButtons();
+  updateLiveTotal();
+}
   addVehicleBtn.addEventListener("click", addVehicleBlock);
   removeVehicleBtn.addEventListener("click", removeVehicleBlock);
 
-  renderVehicleButtons();  
+  renderVehicleButtons();
+  updateLiveTotal();  
     
   function updatePaymentFields() {
   const selected = paymentMethodSelect.value;
