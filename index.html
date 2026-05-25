@@ -583,6 +583,16 @@
         action="https://script.google.com/macros/s/AKfycbzTBUAyYc3m-m16MNaDb_BspRgsf8ECAq1vsG3IndH_psFbwdo74_3mh0pk1FzmYhjcJw/exec"
         novalidate
       >
+
+       <div style="display:none;">
+          <label>
+            Leave this field empty
+            <input type="text" name="website" id="website" autocomplete="off">
+          </label>
+        </div>
+
+        <input type="hidden" name="formStartedAt" id="formStartedAt">
+
         <input type="hidden" id="registrationType" name="registrationType" value="1" />
         <input type="hidden" id="amount" name="amount" value="$30.00" />
 
@@ -1090,5 +1100,8 @@
      steelnstyless@gmail.com
   </a>
 </div>
+  <script>
+    document.getElementById('formStartedAt').value = Date.now();
+  </script>
 </body>
 </html>
